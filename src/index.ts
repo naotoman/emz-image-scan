@@ -110,11 +110,16 @@ interface EbayListResult {
   listingId: string;
 }
 
+interface EbayOrdersResult {
+  skus: string[];
+}
+
 const TABLE_NAME = process.env.TABLE_NAME!;
 const QUEUE_URL = process.env.QUEUE_URL!;
 const LAMBDAS_MERC_ITEM = process.env.LAMBDAS_MERC_ITEM!.split(",");
 const LAMBDA_EBAY_DELETE = process.env.LAMBDA_EBAY_DELETE!;
 const LAMBDA_EBAY_LIST = process.env.LAMBDA_EBAY_LIST!;
+const LAMBDA_GET_EBAY_ORDERS = process.env.LAMBDA_GET_EBAY_ORDERS!;
 const LAMBDA_IS_ELIGIBLE_FOR_LISTING =
   process.env.LAMBDA_IS_ELIGIBLE_FOR_LISTING!;
 const LAMBDA_OFFER_PART = process.env.LAMBDA_OFFER_PART!;
@@ -212,6 +217,13 @@ async function waitLoop(lastRunAt: number) {
 }
 
 async function main() {
+  const ordersResult: EbayOrdersResult = await runLambda(
+    LAMBDA_GET_EBAY_ORDERS,
+    {
+      account: "main",
+    }
+  );
+
   let nextApiFuncIndex = 0;
   let lastRunAt = 0;
   while (true) {
@@ -222,11 +234,16 @@ async function main() {
     const messageBodyStr = await pollMessage(QUEUE_URL);
     if (!messageBodyStr) continue;
 
-    waitLoop(lastRunAt);
-    lastRunAt = Date.now();
-
     console.log("Message received:", messageBodyStr);
     const messageBody: Body = JSON.parse(messageBodyStr);
+
+    if (ordersResult.skus.includes(messageBody.item.ebaySku)) {
+      console.log(`Item with SKU ${messageBody.item.ebaySku} is sold.`);
+      continue;
+    }
+
+    waitLoop(lastRunAt);
+    lastRunAt = Date.now();
 
     const apiFunc = LAMBDAS_MERC_ITEM[nextApiFuncIndex];
     nextApiFuncIndex = (nextApiFuncIndex + 1) % LAMBDAS_MERC_ITEM.length;
