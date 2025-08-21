@@ -15,12 +15,15 @@ export const makeInputForUpdateItem = (
   tableName: string,
   key: string,
   keyVal: any,
-  params: { [key: string]: any }
+  params: { [key: string]: any },
+  remove?: string
 ): UpdateItemInput => {
+  const removeExpression = remove ? `REMOVE ${remove} ` : "";
   return {
     TableName: tableName,
     Key: marshall({ [key]: keyVal }),
     UpdateExpression:
+      removeExpression +
       "SET " +
       Array.from(
         { length: Object.keys(params).length },
@@ -43,9 +46,10 @@ export const updateItem = async (
   tableName: string,
   key: string,
   keyVal: any,
-  params: { [key: string]: any }
+  params: { [key: string]: any },
+  remove?: string
 ): Promise<void> => {
-  const input = makeInputForUpdateItem(tableName, key, keyVal, params);
+  const input = makeInputForUpdateItem(tableName, key, keyVal, params, remove);
   const command = new UpdateItemCommand(input);
   await ddbClient.send(command);
 };

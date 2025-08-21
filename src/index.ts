@@ -257,10 +257,16 @@ async function main() {
         account: "main",
         sku: messageBody.item.ebaySku,
       });
-      await ddb.updateItem(TABLE_NAME, "id", messageBody.item.id, {
-        ...toUpdateParams,
-        isListed: false,
-      });
+      await ddb.updateItem(
+        TABLE_NAME,
+        "id",
+        messageBody.item.id,
+        {
+          ...toUpdateParams,
+          isListed: false,
+        },
+        "isListedGsi"
+      );
       continue;
     }
 
@@ -298,10 +304,16 @@ async function main() {
         account: "main",
         sku: messageBody.item.ebaySku,
       });
-      await ddb.updateItem(TABLE_NAME, "id", messageBody.item.id, {
-        ...toUpdateParams,
-        isListed: false,
-      });
+      await ddb.updateItem(
+        TABLE_NAME,
+        "id",
+        messageBody.item.id,
+        {
+          ...toUpdateParams,
+          isListed: false,
+        },
+        "isListedGsi"
+      );
       continue;
     }
 
@@ -310,6 +322,7 @@ async function main() {
     await ddb.updateItem(TABLE_NAME, "id", messageBody.item.id, {
       ...toUpdateParams,
       isListed: true,
+      isListedGsi: 1,
     });
 
     const offerPart: OfferPart = await runLambda(LAMBDA_OFFER_PART, {
