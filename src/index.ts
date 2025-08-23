@@ -3,7 +3,6 @@ import {
   LambdaClient,
   UpdateFunctionConfigurationCommand,
 } from "@aws-sdk/client-lambda";
-import { SQSClient } from "@aws-sdk/client-sqs";
 import * as ddb from "./dynamodb-utils";
 
 interface Item {
@@ -20,10 +19,6 @@ interface Item {
   ebayStoreCategory: string;
   scannedAt?: string;
   scanCount?: number;
-}
-
-interface Body {
-  item: Item;
 }
 
 interface ItemData {
@@ -126,7 +121,6 @@ process.on("SIGTERM", () => {
   SIGTERM_RECEIVED = true;
 });
 
-const sqsClient = new SQSClient();
 const lambdaClient = new LambdaClient();
 
 const getFormattedDate = (date: Date): string => {
@@ -162,6 +156,7 @@ const runLambda = async (
   }
   return res_obj.result;
 };
+
 async function updateFunction(functionName: string) {
   const cmd = new UpdateFunctionConfigurationCommand({
     FunctionName: functionName,
@@ -199,7 +194,7 @@ async function main() {
     }
 
     const nextItem: Item = await runLambda(LAMBDA_GET_NEXT_ITEM, {});
-    console.log(JSON.stringify({ nextItem }));
+    console.log({ nextItem: nextItem.id });
 
     if (ordersResult.skus.includes(nextItem.ebaySku)) {
       console.log(`Item with SKU ${nextItem.ebaySku} is sold.`);
@@ -217,7 +212,6 @@ async function main() {
       item = await runLambda(apiFunc, {
         id: nextItem.orgUrl.split("/").pop(),
       });
-      console.log(JSON.stringify(item));
     } catch (error) {
       console.log(`Merc API item failed. Updating function ${apiFunc}`);
       await updateFunction(apiFunc);
