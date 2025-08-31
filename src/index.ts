@@ -19,6 +19,12 @@ interface Item {
   ebayStoreCategory: string;
   scannedAt?: string;
   scanCount?: number;
+  ebayCondition: string;
+  ebayConditionDescription?: string;
+  ebayImageUrls: string[];
+  ebayAspectParam: Record<string, unknown>;
+  ebayTitle: string;
+  ebayDescription: string;
 }
 
 interface ItemData {
@@ -300,6 +306,24 @@ async function main() {
       isListedGsi: 1,
     });
 
+    const inventoryPayload = {
+      availability: {
+        shipToLocationAvailability: {
+          quantity: 1,
+        },
+      },
+      condition: nextItem.ebayCondition,
+      product: {
+        title: nextItem.ebayTitle,
+        description: nextItem.ebayDescription,
+        imageUrls: nextItem.ebayImageUrls,
+        aspects: nextItem.ebayAspectParam,
+      },
+      ...(nextItem.ebayConditionDescription
+        ? { conditionDescription: nextItem.ebayConditionDescription }
+        : {}),
+    };
+
     const offerPart: OfferPart = await runLambda(LAMBDA_OFFER_PART, {
       id: item.id,
       account: "main",
@@ -326,6 +350,7 @@ async function main() {
 
     const ebayListResult: EbayListResult = await runLambda(LAMBDA_EBAY_LIST, {
       sku: nextItem.ebaySku,
+      inventoryPayload,
       offerPayload,
       account: "main",
     });
