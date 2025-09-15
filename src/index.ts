@@ -306,23 +306,23 @@ async function main() {
       isListedGsi: 1,
     });
 
-    const inventoryPayload = {
-      availability: {
-        shipToLocationAvailability: {
-          quantity: 1,
-        },
-      },
-      condition: nextItem.ebayCondition,
-      product: {
-        title: nextItem.ebayTitle,
-        description: nextItem.ebayDescription,
-        imageUrls: nextItem.ebayImageUrls,
-        aspects: nextItem.ebayAspectParam,
-      },
-      ...(nextItem.ebayConditionDescription
-        ? { conditionDescription: nextItem.ebayConditionDescription }
-        : {}),
-    };
+    // const inventoryPayload = {
+    //   availability: {
+    //     shipToLocationAvailability: {
+    //       quantity: 1,
+    //     },
+    //   },
+    //   condition: nextItem.ebayCondition,
+    //   product: {
+    //     title: nextItem.ebayTitle,
+    //     description: nextItem.ebayDescription,
+    //     imageUrls: nextItem.ebayImageUrls,
+    //     aspects: nextItem.ebayAspectParam,
+    //   },
+    //   ...(nextItem.ebayConditionDescription
+    //     ? { conditionDescription: nextItem.ebayConditionDescription }
+    //     : {}),
+    // };
 
     const offerPart: OfferPart = await runLambda(LAMBDA_OFFER_PART, {
       id: item.id,
@@ -350,7 +350,7 @@ async function main() {
 
     const ebayListResult: EbayListResult = await runLambda(LAMBDA_EBAY_LIST, {
       sku: nextItem.ebaySku,
-      inventoryPayload,
+      // inventoryPayload,
       offerPayload,
       account: "main",
     });
