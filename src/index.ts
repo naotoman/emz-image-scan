@@ -6,6 +6,7 @@ import {
 import * as ddb from "./dynamodb-utils";
 
 interface Item {
+  username: string;
   id: string;
   orgUrl: string;
   ebaySku: string;
@@ -182,14 +183,28 @@ async function waitLoop(lastRunAt: number) {
   }
 }
 
-async function main() {
-  const ordersResult: EbayOrdersResult = await runLambda(
+async function getOrderSkus() {
+  const ordersResultMain: EbayOrdersResult = await runLambda(
     LAMBDA_GET_EBAY_ORDERS,
     {
       account: "main",
     }
   );
-  console.log(JSON.stringify({ ordersResult }));
+  console.log(JSON.stringify({ ordersResultMain }));
+  const ordersResultSub: EbayOrdersResult = await runLambda(
+    LAMBDA_GET_EBAY_ORDERS,
+    {
+      account: "sub",
+    }
+  );
+  console.log(JSON.stringify({ ordersResultSub }));
+
+  return [...ordersResultMain.skus, ...ordersResultSub.skus];
+}
+
+async function main() {
+  const orderSkus = await getOrderSkus();
+  console.log(JSON.stringify({ orderSkus }));
 
   let nextApiFuncIndex = 0;
   let lastRunAt = 0;
@@ -201,8 +216,14 @@ async function main() {
 
     const nextItem: Item = await runLambda(LAMBDA_GET_NEXT_ITEM, {});
     console.log({ nextItem: nextItem.id });
+    const ebayAccount = (() => {
+      if (nextItem.username === "sub") return "sub";
+      if (nextItem.username === "test") return "test";
+      return "main";
+    })();
+    console.log({ ebayAccount });
 
-    if (ordersResult.skus.includes(nextItem.ebaySku)) {
+    if (orderSkus.includes(nextItem.ebaySku)) {
       console.log(`Item with SKU ${nextItem.ebaySku} is sold.`);
       continue;
     }
@@ -235,7 +256,7 @@ async function main() {
     if (!toUpdateParams.isOrgLive) {
       console.log("Item is removed or sold out");
       await runLambda(LAMBDA_EBAY_DELETE, {
-        account: "main",
+        account: ebayAccount,
         sku: nextItem.ebaySku,
       });
       await ddb.updateItem(
@@ -282,7 +303,7 @@ async function main() {
     ) {
       console.log("Item is not eligible for listing or needs update");
       await runLambda(LAMBDA_EBAY_DELETE, {
-        account: "main",
+        account: ebayAccount,
         sku: nextItem.ebaySku,
       });
       await ddb.updateItem(
@@ -326,7 +347,7 @@ async function main() {
 
     const offerPart: OfferPart = await runLambda(LAMBDA_OFFER_PART, {
       id: item.id,
-      account: "main",
+      account: ebayAccount,
       orgPrice: item.price,
       weight: nextItem.weightGram,
       box_dimensions: {
@@ -352,7 +373,7 @@ async function main() {
       sku: nextItem.ebaySku,
       // inventoryPayload,
       offerPayload,
-      account: "main",
+      account: ebayAccount,
     });
     console.log(JSON.stringify({ ebayListResult }));
   }
