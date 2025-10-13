@@ -366,6 +366,7 @@ async function main() {
       categoryId: nextItem.ebayCategory,
       merchantLocationKey: "main-warehouse",
       storeCategoryNames: [nextItem.ebayStoreCategory],
+      listingDescription: nextItem.ebayDescription,
     };
     console.log(JSON.stringify({ offerPayload }));
 
