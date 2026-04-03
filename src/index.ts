@@ -51,7 +51,7 @@ interface ItemData {
     {
       id: number;
       name: string;
-    }
+    },
   ];
   item_condition: {
     id: number;
@@ -116,6 +116,7 @@ const TABLE_NAME = process.env.TABLE_NAME!;
 const LAMBDA_GET_NEXT_ITEM = process.env.LAMBDA_GET_NEXT_ITEM!;
 const LAMBDAS_MERC_ITEM = process.env.LAMBDAS_MERC_ITEM!.split(",");
 const LAMBDA_EBAY_DELETE = process.env.LAMBDA_EBAY_DELETE!;
+const LAMBDA_DELETE_S3_IMAGES = process.env.LAMBDA_DELETE_S3_IMAGES!;
 const LAMBDA_EBAY_LIST = process.env.LAMBDA_EBAY_LIST!;
 const LAMBDA_GET_EBAY_ORDERS = process.env.LAMBDA_GET_EBAY_ORDERS!;
 const LAMBDA_IS_ELIGIBLE_FOR_LISTING =
@@ -146,7 +147,7 @@ const getFormattedDate = (date: Date): string => {
 
 const runLambda = async (
   functionName: string,
-  payload: Record<string, any>
+  payload: Record<string, any>,
 ) => {
   const command = new InvokeCommand({
     FunctionName: functionName,
@@ -178,7 +179,7 @@ async function waitLoop(lastRunAt: number) {
   if (elapsedTime < randomTime) {
     console.log(`waitLoop. sleep for ${randomTime - elapsedTime}ms`);
     await new Promise((resolve) =>
-      setTimeout(resolve, randomTime - elapsedTime)
+      setTimeout(resolve, randomTime - elapsedTime),
     );
   }
 }
@@ -188,14 +189,14 @@ async function getOrderSkus() {
     LAMBDA_GET_EBAY_ORDERS,
     {
       account: "main",
-    }
+    },
   );
   console.log(JSON.stringify({ ordersResultMain }));
   const ordersResultSub: EbayOrdersResult = await runLambda(
     LAMBDA_GET_EBAY_ORDERS,
     {
       account: "sub",
-    }
+    },
   );
   console.log(JSON.stringify({ ordersResultSub }));
 
@@ -259,6 +260,9 @@ async function main() {
         account: ebayAccount,
         sku: nextItem.ebaySku,
       });
+      await runLambda(LAMBDA_DELETE_S3_IMAGES, {
+        id: nextItem.orgUrl.split("/").pop(),
+      });
       await ddb.updateItem(
         TABLE_NAME,
         "id",
@@ -267,7 +271,7 @@ async function main() {
           ...toUpdateParams,
           isListed: false,
         },
-        "isListedGsi"
+        "isListedGsi",
       );
       continue;
     }
@@ -290,7 +294,7 @@ async function main() {
       LAMBDA_IS_ELIGIBLE_FOR_LISTING,
       {
         item,
-      }
+      },
     );
     console.log(JSON.stringify({ isEligibleResult }));
 
@@ -306,6 +310,9 @@ async function main() {
         account: ebayAccount,
         sku: nextItem.ebaySku,
       });
+      await runLambda(LAMBDA_DELETE_S3_IMAGES, {
+        id: nextItem.orgUrl.split("/").pop(),
+      });
       await ddb.updateItem(
         TABLE_NAME,
         "id",
@@ -314,7 +321,7 @@ async function main() {
           ...toUpdateParams,
           isListed: false,
         },
-        "isListedGsi"
+        "isListedGsi",
       );
       continue;
     }
@@ -385,7 +392,7 @@ main()
     console.log(
       JSON.stringify({
         message: "Container ended.",
-      })
+      }),
     );
   })
   .catch((error) => {
@@ -397,6 +404,6 @@ main()
           message: error.message,
           stack: error.stack,
         },
-      })
+      }),
     );
   });
