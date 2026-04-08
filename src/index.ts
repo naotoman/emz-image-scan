@@ -175,7 +175,7 @@ async function updateFunction(functionName: string) {
 
 async function waitLoop(lastRunAt: number) {
   const elapsedTime = Date.now() - lastRunAt;
-  const randomTime = Math.floor(Math.random() * 1000) + 2000;
+  const randomTime = Math.floor(Math.random() * 1000) + 1000;
   if (elapsedTime < randomTime) {
     console.log(`waitLoop. sleep for ${randomTime - elapsedTime}ms`);
     await new Promise((resolve) =>
