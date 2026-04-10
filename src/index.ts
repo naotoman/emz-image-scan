@@ -19,6 +19,7 @@ interface Item {
   ebayCategory: string;
   ebayStoreCategory: string;
   scannedAt?: string;
+  createdAt: string;
   scanCount?: number;
   ebayCondition: string;
   ebayConditionDescription?: string;
@@ -145,6 +146,34 @@ const getFormattedDate = (date: Date): string => {
   return date.toLocaleString("ja-JP", options).replaceAll("/", "-");
 };
 
+function getMirroredTimestamp(t: string) {
+  // フォーマットの揺れを修正（/ → -）
+  const normalized = t.replaceAll("/", "-");
+
+  // "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ss" に変換
+  const isoLike = normalized.replace(" ", "T");
+
+  // Dateに変換（ローカルタイムとして扱う）
+  const time = new Date(isoLike);
+
+  if (isNaN(time.getTime())) {
+    throw new Error(`Invalid date format: ${t}`);
+  }
+
+  const now = Date.now();
+  let diff = now - time.getTime();
+
+  // 制約（ミリ秒）
+  const MIN = 24 * 60 * 60 * 1000; // 24時間
+  const MAX = 30 * 24 * 60 * 60 * 1000; // 30日
+
+  // クランプ
+  if (diff < MIN) diff = MIN;
+  if (diff > MAX) diff = MAX;
+
+  return now + diff; // = 2 * now - t
+}
+
 const runLambda = async (
   functionName: string,
   payload: Record<string, any>,
@@ -249,6 +278,7 @@ async function main() {
 
     let toUpdateParams: Record<string, any> = {
       scannedAt: getFormattedDate(new Date()),
+      nextScan: getMirroredTimestamp(nextItem.createdAt),
       scanCount: (nextItem.scanCount || 0) + 1,
       isOrgLive: item.status === "on_sale",
     };
