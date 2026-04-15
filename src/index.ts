@@ -255,6 +255,9 @@ async function main() {
 
     if (orderSkus.includes(nextItem.ebaySku)) {
       console.log(`Item with SKU ${nextItem.ebaySku} is sold.`);
+      await ddb.updateItem(TABLE_NAME, "id", nextItem.id, {
+        nextScan: getMirroredTimestamp(nextItem.createdAt),
+      });
       continue;
     }
 
