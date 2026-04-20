@@ -163,15 +163,15 @@ function getMirroredTimestamp(t: string) {
   const now = Date.now();
   let diff = now - time.getTime();
 
-  // 制約（ミリ秒）
-  const MIN = 24 * 60 * 60 * 1000; // 24時間
-  const MAX = 30 * 24 * 60 * 60 * 1000; // 30日
-
-  // クランプ
-  if (diff < MIN) diff = MIN;
-  if (diff > MAX) diff = MAX;
-
-  return now + diff; // = 2 * now - t
+  const DAY = 24 * 60 * 60 * 1000;
+  // アップデート前の残存データを先に処理するため、1年足した。それ以上の意味はない。
+  const base = now + 365 * DAY;
+  if (diff > 90 * DAY) {
+    return base + 7 * DAY;
+  } else if (diff > 30 * DAY) {
+    return base + 3 * DAY;
+  }
+  return base;
 }
 
 const runLambda = async (
