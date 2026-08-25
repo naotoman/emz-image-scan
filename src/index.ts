@@ -221,15 +221,17 @@ async function getOrderSkus() {
     },
   );
   console.log(JSON.stringify({ ordersResultMain }));
-  const ordersResultSub: EbayOrdersResult = await runLambda(
-    LAMBDA_GET_EBAY_ORDERS,
-    {
-      account: "sub",
-    },
-  );
-  console.log(JSON.stringify({ ordersResultSub }));
+  // const ordersResultSub: EbayOrdersResult = await runLambda(
+  //   LAMBDA_GET_EBAY_ORDERS,
+  //   {
+  //     account: "sub",
+  //   },
+  // );
+  // console.log(JSON.stringify({ ordersResultSub }));
 
-  return [...ordersResultMain.skus, ...ordersResultSub.skus];
+  // return [...ordersResultMain.skus, ...ordersResultSub.skus];
+
+  return ordersResultMain.skus;
 }
 
 async function main() {
