@@ -261,6 +261,25 @@ async function main() {
       continue;
     }
 
+    if (ebayAccount != "main") {
+      console.log(
+        "Item is not listed on main account. Deleting from eBay and S3.",
+      );
+      await runLambda(LAMBDA_DELETE_S3_IMAGES, {
+        id: nextItem.orgUrl.split("/").pop(),
+      });
+      await ddb.updateItem(
+        TABLE_NAME,
+        "id",
+        nextItem.id,
+        {
+          isListed: false,
+        },
+        "isListedGsi",
+      );
+      continue;
+    }
+
     waitLoop(lastRunAt);
     lastRunAt = Date.now();
 
@@ -410,13 +429,14 @@ async function main() {
     };
     console.log(JSON.stringify({ offerPayload }));
 
-    const ebayListResult: EbayListResult = await runLambda(LAMBDA_EBAY_LIST, {
-      sku: nextItem.ebaySku,
-      // inventoryPayload,
-      offerPayload,
-      account: ebayAccount,
-    });
-    console.log(JSON.stringify({ ebayListResult }));
+    // サブアカウントで出品しているのと混ざっていてエラーが出るので、一旦機能停止。
+    // const ebayListResult: EbayListResult = await runLambda(LAMBDA_EBAY_LIST, {
+    //   sku: nextItem.ebaySku,
+    //   // inventoryPayload,
+    //   offerPayload,
+    //   account: ebayAccount,
+    // });
+    // console.log(JSON.stringify({ ebayListResult }));
   }
 }
 
