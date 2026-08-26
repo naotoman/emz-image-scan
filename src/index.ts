@@ -410,7 +410,7 @@ async function main() {
       storeCategoryNames: [nextItem.ebayStoreCategory],
       listingDescription: nextItem.ebayDescription,
     };
-    console.log(JSON.stringify({ offerPayload }));
+    // console.log(JSON.stringify({ offerPayload }));
 
     // サブアカウントで出品しているのと混ざっていてエラーが出るので、一旦機能停止。
     // const ebayListResult: EbayListResult = await runLambda(LAMBDA_EBAY_LIST, {
